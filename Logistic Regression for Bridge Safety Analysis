@@ -1,0 +1,113 @@
+# Revised Mini-project
+# Building Logistic Regression for Bridge Safety Analysis
+# Wang Xi, March 2nd, 2022
+
+# Import libraries
+import os # for setting up working directory
+import pandas as pd
+import numpy as np
+import numdifftools as nd # for newton method
+import scipy.linalg as spl # for newton method
+from scipy.optimize import minimize # for minimization, maximizing Loglikelihood
+from scipy import random # for Monte Carlo
+
+# Setting workin directory
+path = "C:\\Users\\xw041\\OneDrive - Texas Tech University\\Desktop\\TTU_8th_2022 Spring\\CE 5331 Optimization and Decision Making 1\\Miniproject"
+os.chdir(path)
+
+# Read data
+a = pd.read_csv("cleaned bridge condition classification for python csv.csv") 
+len(a)
+
+X = a[['PPTIN','DeckArea_SQM','bridge_age','truck_aadt','recon_indicator']]
+age2 = a["bridge_age"]**2 # Calculate the square of age
+X['age2']=age2 
+X.head()
+X.iloc[:,0] # the first column, same as X.PPTIN
+X.iloc[:,5] # the 6th column
+
+Y = a['BridgeCond_class']
+Y.head()
+
+a.shape
+X.shape # (602,6)
+
+# Normalization
+X['PPTIN'] = (X['PPTIN']-np.min(X['PPTIN']))/(np.max(X['PPTIN'])-np.min(X['PPTIN']))
+X['DeckArea_SQM'] = (X['DeckArea_SQM']-np.min(X['DeckArea_SQM']))/(np.max(X['DeckArea_SQM'])-np.min(X['DeckArea_SQM']))
+X['bridge_age'] = (X['bridge_age']-np.min(X['bridge_age']))/(np.max(X['bridge_age'])-np.min(X['bridge_age']))
+X['truck_aadt'] = (X['truck_aadt']-np.min(X['truck_aadt']))/(np.max(X['truck_aadt'])-np.min(X['truck_aadt']))
+X['age2'] = (X['age2']-np.min(X['age2']))/(np.max(X['age2'])-np.min(X['age2']))
+
+
+# Optimization by using Nelder-Mead
+# Function to optimize
+def bridge1(beta,X,Y):
+    z = beta[0] + beta[1]*X.iloc[:,0] + beta[2]*X.iloc[:,1] + beta[3]*X.iloc[:,2] + beta[4]*X.iloc[:,3] + beta[5]*X.iloc[:,4] + beta[6]*X.iloc[:,5]
+    prob = 1/(1+np.exp(-z))
+    LL = np.sum(Y*np.log(prob) + (1-Y)*np.log(1-prob))
+    LL = -1*LL # for maximizing the log-likelihood
+    return(LL)
+
+# Performing optimization
+beta = [0.1,0.1,0.3,0.1,0.1,0.1,0.1]
+LL = minimize(bridge1,beta,args=(X,Y,), method='Nelder-Mead',options={"maxiter":5000})
+LL
+LL.x
+
+
+
+
+# MCMC-Monte Carlo analysis
+N = 2000
+beta_list = []
+
+for i in range(N):
+    beta_rand = random.uniform(0,1,7)
+    beta = beta_rand
+    LL = minimize(bridge1,beta,args=(X,Y,), method='Nelder-Mead')
+    beta_list.append(LL.x)
+    print("Right after", i+1,"th iteration:" , "beta list is:", LL.x, 
+          "and Maximal Log-likelihood value is:", LL.fun)
+
+np.savetxt('1000beta.csv',beta_list,delimiter=',')
+np.savetxt('2000beta.csv',beta_list,delimiter=',')
+np.savetxt('3000beta.csv',beta_list,delimiter=',')
+np.savetxt('4000-5000beta.csv',beta_list,delimiter=',')
+np.savetxt('5000beta.csv',beta_list,delimiter=',')
+
+
+
+
+# Newton's Method
+# Function to optimize
+def bridge2(beta,X,Y):
+    z = beta[0] + beta[1]*X.iloc[:,0] + beta[2]*X.iloc[:,1] + beta[3]*X.iloc[:,2] + beta[4]*X.iloc[:,3] + beta[5]*X.iloc[:,4] + beta[6]*X.iloc[:,5]
+    prob = 1/(1+np.exp(-z))
+    LL = np.sum(Y*np.log(prob) + (1-Y)*np.log(1-prob))
+    LL = -1*LL # for maximizing the log-likelihood
+    return(LL)
+
+beta = [-2.15919588,  0.29616468, -0.61780859,  4.03651724, -0.2602396 ,
+0.65105229, -0.74503117] # get from Nelder-Mead method
+tol = 1e-05 # Acceptable tolerance
+eps = 100000  # A big number to ensure we enter the loop
+idx = 0 # initialize the index of iterations
+while (eps>tol):  # loop through to find new estimates
+    a = nd.Gradient(bridge2)(beta,X,Y)
+    b = nd.Hessian(bridge2)(beta,X,Y)
+    binv = np.linalg.inv(b)
+    eta = np.matmul(a,binv)
+    beta_new = beta - eta
+    eps = np.sum(np.sqrt((beta_new-beta)**2))
+    eps = abs(eps)
+    beta = beta_new
+    idx = idx + 1
+
+bridge2(beta_new,X,Y)
+idx
+beta_new
+
+# Compute the Eigen Values of the Hessian
+e = spl.eig(b) 
+e # we have local optimal, not have a global optimal
