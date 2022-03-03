@@ -13,7 +13,7 @@ from scipy import random # for Monte Carlo
 
 # Setting workin directory
 path = "C:\\Users\\xw041\\OneDrive - Texas Tech University\\Desktop\\TTU_8th_2022 Spring\\CE 5331 Optimization and Decision Making 1\\Miniproject"
-os.chdir(path)
+os.chdir(path) # the original dataset is from National Bridge Inventory Data
 
 # Read data
 a = pd.read_csv("cleaned bridge condition classification for python csv.csv") 
