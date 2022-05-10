@@ -1,0 +1,192 @@
+# codes based on water allocation Fig 1
+# Define variables
+x11 = LpVariable("corn-revenue1", lowBound=0, upBound=22, cat="Continuous")
+x12 = LpVariable("corn-revenue2", lowBound=0, upBound=30, cat="Continuous")
+x13 = LpVariable("corn-revenue3", lowBound=0, upBound=40, cat="Continuous")
+alpha11 = LpVariable("alpha1-corn", lowBound=0, upBound=1, cat="Integer")
+alpha12 = LpVariable("alpha2-corn", lowBound=0, upBound=1, cat="Integer")
+alpha13 = LpVariable("alpha3-corn", lowBound=0, upBound=1, cat="Integer")
+
+x21 = LpVariable("cotton-revenue1", lowBound=0, upBound=22, cat="Continuous")
+x22 = LpVariable("cotton-revenue2", lowBound=0, upBound=35, cat="Continuous")
+alpha21 = LpVariable("alpha1-cotton", lowBound=0, upBound=1, cat="Integer")
+alpha22 = LpVariable("alpha2-cotton", lowBound=0, upBound=1, cat="Integer")
+
+x31 = LpVariable("sorghum-revenue1", lowBound=0, upBound=20, cat="Continuous")
+x32 = LpVariable("sorghum-revenue2", lowBound=0, upBound=35, cat="Continuous")
+alpha31 = LpVariable("alpha1-sorghum", lowBound=0, upBound=1, cat="Integer")
+alpha32 = LpVariable("alpha2-sorgum", lowBound=0, upBound=1, cat="Integer")
+
+
+
+
+# Question 2
+# Basic Structure Design
+# prob_cor = LpProblem(name='piecewise-corn', sense=LpMaximize)
+# prob_cor += 0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13 # Objective function
+# prob_cor += alpha11 + alpha12 +alpha13 <= 1 # to define binary variables
+# prob_cor += x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13 -rain75*640 <= 18*640 # water allocation constraints ???
+# prob_cor += x11 - 22*alpha11 <= 0
+# prob_cor += x12 - 8*alpha12 <= 0
+# prob_cor += x13 - 10*alpha13 <= 0
+
+# prob_cot = LpProblem(name='piecewise-cotton', sense=LpMaximize)
+# prob_cot += 0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22 # Objective function
+# prob_cot += alpha21 + alpha22 <= 1 # to define binary variables
+# prob_cot += x21 + 0*alpha21 + x22 + 22*alpha22 -rain75*640 <= 18*640 # water allocation constraints ???
+# prob += x21 + 0*alpha21 + x22 + 22*alpha22 >=50 # cotton must be planted at least 50 acres
+# prob_cot += x21 - 22*alpha21 <= 0
+# prob_cot += x22 - 13*alpha22 <= 0
+
+# prob_sor = LpProblem(name='piecewise-sorghum', sense=LpMaximize)
+# prob_sor += 0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32 # Objective function
+# prob_sor += alpha31 + alpha32 <= 1 # to define binary variables
+# prob_sor += x31 + 0*alpha31 + x32 + 20*alpha32 -rain75*640 <= 18*640 # water allocation constraints ???
+# prob_sor += x31 - 20*alpha31 <= 0
+# prob_sor += x32 - 15*alpha32 <= 0
+
+
+# Question 2 codes from here
+# Define the LP Problem and add constraints
+prob = LpProblem(name='piecewise-revenue', sense=LpMaximize)
+prob += (0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13) + (0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22) + (0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32)# Objective function
+prob += alpha11 + alpha12 +alpha13 <= 1 # to define corn binary variables
+prob += alpha21 + alpha22 <= 1 # to define cotton binary variables
+prob += alpha31 + alpha32 <= 1 # to define sorghum binary variables
+prob += 28*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + 20*(x21 + 0*alpha21 + x22 + 22*alpha22) + 18*(x31 + 0*alpha31 + x32 + 20*alpha32) - rain75*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) <= 18*((x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32)) # water allocation constraints ???
+prob += (x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32) <= 640
+prob += (20000 + 25*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13)) + (15000 + 20*(x21 + 0*alpha21 + x22 + 22*alpha22)) + (10000 + 18*(x31 + 0*alpha31 + x32 + 20*alpha32)) <= 100000
+# prob += x21 + 0*alpha21 + x22 + 22*alpha22 >=50 # cotton must be planted at least 50 acres
+prob += x11 - 22*alpha11 <= 0
+prob += x12 - 8*alpha12 <= 0
+prob += x13 - 10*alpha13 <= 0 
+prob += x21 - 22*alpha21 <= 0
+prob += x22 - 13*alpha22 <= 0
+prob += x31 - 20*alpha31 <= 0
+prob += x32 - 15*alpha32 <= 0
+
+# The problem data is written to an .lp file
+problem.writeLP("MiniProject3_75th.lp")
+
+# The problem is solved using PuLP's default Solver
+prob.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[prob.status])
+
+# Each of the variables is printed with its optimum value
+for v in prob.variables():
+    print(v.name, "=", v.varValue)
+
+obj = value(prob.objective)
+obj
+
+# Result
+Status: Optimal
+alpha1_corn = 0
+alpha1_cotton = 0
+alpha1_sorghum = 0
+alpha2_corn = 0
+alpha2_cotton = 1
+alpha2_sorgum = 1
+alpha3_corn = 1
+corn_revenue1 = 0.0
+corn_revenue2 = 0.0
+corn_revenue3 = 10.0
+cotton_revenue1 = 0.0
+cotton_revenue2 = 13.0
+sorghum_revenue1 = 0.0
+sorghum_revenue2 = 15.0
+Out[29]: 1910.0
+
+corn_area = x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13
+corn_area = 10 + 30
+corn_area # 40
+
+cotton_area = x21 + 0*alpha21 + x22 + 22*alpha22
+cotton_area = 13 + 22*1
+cotton_area # 35
+
+sorghum_area = x31 + 0*alpha31 + x32 + 20*alpha32
+sorghum_area = 15 + 20*1
+sorghum_area # 35
+
+# 75th wet
+# 640 acres of land will be all used
+# Define the LP Problem and add constraints
+prob = LpProblem(name='piecewise-revenue', sense=LpMaximize)
+prob += 750*(0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13) + 500*(0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22) + 400*(0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32)# Objective function
+prob += alpha11 + alpha12 +alpha13 <= 1 # to define corn binary variables
+prob += alpha21 + alpha22 <= 1 # to define cotton binary variables
+prob += alpha31 + alpha32 <= 1 # to define sorghum binary variables
+prob += 28*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + 20*(x21 + 0*alpha21 + x22 + 22*alpha22) + 18*(x31 + 0*alpha31 + x32 + 20*alpha32) - rain75*640 <= 18*640 # water allocation constraints ???
+prob += (x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32) == 640
+prob += (20000 + 25*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13)) + (15000 + 20*(x21 + 0*alpha21 + x22 + 22*alpha22)) + (10000 + 18*(x31 + 0*alpha31 + x32 + 20*alpha32)) <= 100000
+# prob += x21 + 0*alpha21 + x22 + 22*alpha22 >= 50 # cotton must be planted at least 50 acres
+prob += x11 - 22*alpha11 <= 0
+prob += x12 - 8*alpha12 <= 0
+prob += x13 - 10*alpha13 <= 0
+prob += x21 - 22*alpha21 <= 0
+prob += x22 - 13*alpha22 <= 0
+prob += x31 - 20*alpha31 <= 0
+prob += x32 - 15*alpha32 <= 0
+
+# The problem data is written to an .lp file
+problem.writeLP("MiniProject3_75th.lp")
+
+# The problem is solved using PuLP's default Solver
+prob.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[prob.status])
+
+# Each of the variables is printed with its optimum value
+for v in prob.variables():
+    print(v.name, "=", v.varValue)
+
+obj = value(prob.objective)
+obj
+
+# Result
+# Status: Infeasible
+
+
+# 25th drought
+# 640 acres of land will be all used
+# Define the LP Problem and add constraints
+prob = LpProblem(name='piecewise-revenue', sense=LpMaximize)
+prob += (0*alpha11 + 100/22*x11 + 100*alpha12 + 700/8*x12 + 800*alpha13 + 100/10*x13) + (0*alpha21 + 550/22*x21 + 550*alpha22 + 5/13*x22) + (0*alpha31 + 450/20*x31 + 450*alpha32 + 5/15*x32)# Objective function
+prob += alpha11 + alpha12 +alpha13 <= 1 # to define corn binary variables
+prob += alpha21 + alpha22 <= 1 # to define cotton binary variables
+prob += alpha31 + alpha32 <= 1 # to define sorghum binary variables
+prob += 28*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + 20*(x21 + 0*alpha21 + x22 + 22*alpha22) + 18*(x31 + 0*alpha31 + x32 + 20*alpha32) - rain25*640 <= 18*640 # water allocation constraints ???
+prob += (x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13) + (x21 + 0*alpha21 + x22 + 22*alpha22) + (x31 + 0*alpha31 + x32 + 20*alpha32) == 640
+prob += (20000 + 25*(x11 + 0*alpha11 + x12 + 0*alpha12 + x13 + 30*alpha13)) + (15000 + 20*(x21 + 0*alpha21 + x22 + 22*alpha22)) + (10000 + 18*(x31 + 0*alpha31 + x32 + 20*alpha32)) <= 100000
+# prob += x21 + 0*alpha21 + x22 + 22*alpha22 >= 50 # cotton must be planted at least 50 acres
+prob += x11 - 22*alpha11 <= 0
+prob += x12 - 8*alpha12 <= 0
+prob += x13 - 10*alpha13 <= 0
+prob += x21 - 22*alpha21 <= 0
+prob += x22 - 13*alpha22 <= 0
+prob += x31 - 20*alpha31 <= 0
+prob += x32 - 15*alpha32 <= 0
+
+# The problem data is written to an .lp file
+problem.writeLP("MiniProject3_75th.lp")
+
+# The problem is solved using PuLP's default Solver
+prob.solve()
+# prob.solve(solver=GLPK(msg=False))
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[prob.status])
+
+# Each of the variables is printed with its optimum value
+for v in prob.variables():
+    print(v.name, "=", v.varValue)
+
+obj = value(prob.objective)
+obj
+
+# Result
+# Status: Infeasible
