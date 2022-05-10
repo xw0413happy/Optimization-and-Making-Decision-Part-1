@@ -1,0 +1,154 @@
+# Mini-project 3
+# Wang Xi, May 4th, 2022
+
+# Import PuLP modeler
+from pulp import *
+# Import libraries
+import os # for setting up working directory
+import pandas as pd
+
+# Question 1
+# 1st Approach--Pulp
+os.chdir("C:\\Users\\xw041\\OneDrive - Texas Tech University\\Desktop\\TTU_8th_2022 Spring\\CE 5331 Optimization and Decision Making 1\\Miniproject 3")
+os.getcwd()
+
+# Read data
+rain = pd.read_csv("Dumas_Rain_Data_10yrs.csv") 
+rain.head()
+rain25 = rain['Total'].quantile(0.25) # 25th drought percentile
+rain75 = rain['Total'].quantile(0.75) # 75th wet percentile
+rain25
+rain75
+
+# Question 1
+# Create an instant problem of LpProblem
+problem = LpProblem(name='MiniProject3-25th-drought', sense=LpMaximize)
+
+# Create decision variables
+x1 = LpVariable('corn', lowBound=50, upBound=None, cat='Continuous') # continuous is default
+x2 = LpVariable('cotton', lowBound=0, upBound=None, cat='Continuous')
+x3 = LpVariable('sorghum', lowBound=0, upBound=None, cat='Continuous')
+
+# Define the constraints
+problem += 750*x1 + 500*x2 + 400*x3 # Objective function
+problem += (20000 + 25*x1) + (15000 + 20*x2) + (10000 + 18*x3) <= 100000 # investment constraint
+problem += x1 + x2 + x3 <= 640 # land constraint
+problem += 28*x1 + 20*x2 + 18*x3 - rain25*640 <= 18 # water requirement constraint
+
+# The problem data is written to an .lp file
+problem.writeLP("MiniProject3-25th-drought.lp")
+
+# The problem is solved using PuLP's choice of Solver
+problem.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[problem.status])
+
+# Each of the variables is printed with its optimum value
+for v in problem.variables():
+    print(v.name, "=", v.varValue)
+
+revenue = value(problem.objective)
+revenue
+print("The maximal revenue with 25th drought is:${}".format(round(revenue,3))) 
+# add 'dollar' sign for test
+
+# Print the obj func optimal value and roots in another way
+print("X1 optimal value:", x1.varValue)
+print("X2 optimal value:", x2.varValue)
+print("X3 optimal value:", x3.varValue)
+
+# Result
+corn = 229.9
+cotton = 0.0
+sorghum = 0.0
+The maximal revenue with 25th drought is:$172425.0
+X1 optimal value: 229.9
+X2 optimal value: 0.0
+X3 optimal value: 0.0
+
+
+# Create an instant problem of LpProblem
+problem = LpProblem(name='MiniProject3-75th-wet', sense=LpMaximize)
+
+# 75th percentile wet
+# Create decision variables
+x1 = LpVariable('corn', lowBound=50, upBound=None, cat='Continuous') # continuous is default
+x2 = LpVariable('cotton', lowBound=0, upBound=None, cat='Continuous')
+x3 = LpVariable('sorghum', lowBound=0, upBound=None, cat='Continuous')
+
+# Define the constraints
+problem += 750*x1 + 500*x2 + 400*x3 # Objective function
+problem += (20000 + 25*x1) + (15000 + 20*x2) + (10000 + 18*x3) <= 100000 # investment function
+problem += x1 + x2 + x3 <= 640
+problem += 28*x1 + 20*x2 + 18*x3 - rain75*640 <= 18
+
+# The problem data is written to an .lp file
+problem.writeLP("MiniProject3-75th-wet.lp")
+
+# The problem is solved using PuLP's choice of Solver
+problem.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[problem.status])
+
+# Each of the variables is printed with its optimum value
+for v in problem.variables():
+    print(v.name, "=", v.varValue)
+
+revenue = value(problem.objective)
+revenue
+print("The maximal revenue with 75th wet is:${}".format(round(revenue,3))) 
+# add 'dollar' sign for test
+
+# Print the obj func optimal value and roots in another way
+print("X1 optimal value:", x1.varValue)
+print("X2 optimal value:", x2.varValue)
+print("X3 optimal value:", x3.varValue)
+
+# Result
+corn = 368.186
+cotton = 0.0
+sorghum = 0.0
+The maximal revenue with 75th wet is:$276139.5
+X1 optimal value: 368.186
+X2 optimal value: 0.0
+X3 optimal value: 0.0
+
+
+
+# codes based on water allocation
+# Define variables x1, x2, alpha1, alpha2
+x11 = LpVariable("cotton-revenue1", lowBound=0, upBound=22, cat="Continuous")
+x12 = LpVariable("cotton-revenue2", lowBound=0, upBound=35, cat="Continuous")
+alpha11 = LpVariable("alpha1-cotton", lowBound=0, upBound=1, cat="Integer")
+alpha12 = LpVariable("alpha2-cotton", lowBound=0, upBound=1, cat="Integer")
+
+# Define the LP Problem and add constraints
+prob_cot = LpProblem(name='piecewise-cotton', sense=LpMaximize)
+prob_cot += 0*alpha11 + 550/22*x11 + 550*alpha12 + 5/13*x12 # Objective function
+prob_cot += alpha11 + alpha12 <= 1 # to define binary variables
+prob_cot += x11 + 0*alpha11 + x12 + 22*alpha12 -rain75*640 <= 20 # water allocation constraints ???
+prob_cot += x11 - 22*alpha11 <= 0
+prob_cot += x12 - 13*alpha12 <= 0
+
+# The problem is solved using PuLP's default Solver
+prob_cot.solve()
+
+# The status of the solution is printed to the screen
+print("Status:", LpStatus[prob_cot.status])
+
+# Each of the variables is printed with its optimum value
+for v in prob_cot.variables():
+    print(v.name, "=", v.varValue)
+
+obj = value(prob_cot.objective)
+obj
+
+# Result
+Status: Optimal
+alpha1_cotton = 0
+alpha2_cotton = 1
+cotton_revenue1 = 0.0
+cotton_revenue2 = 13.0
+Out[25]: 555.0
